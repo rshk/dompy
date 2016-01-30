@@ -1,0 +1,30 @@
+language: python
+
+branches:
+  except:
+    - gh-pages
+
+python:
+  - "3.5"
+
+before_install:
+  - pip install tox flake8
+
+script:
+  - tox
+
+before_script:
+  - flake8 ./dompy/
+  - flake8 ./tests/
+
+env:
+  matrix:
+    - TOXENV=py27
+    - TOXENV=py33
+    - TOXENV=py34
+    - TOXENV=py35
+
+# matrix:
+#   allow_failures:
+#     - env: TOXENV=py32
+#     - env: TOXENV=py33
