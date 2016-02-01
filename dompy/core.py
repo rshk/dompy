@@ -1,20 +1,27 @@
 from __future__ import absolute_import, unicode_literals
 
 import six
+import io
 
 
 class Tag(object):
     name = None
     has_content = False
+    raw_text = False
 
     def __init__(self, *children, **attrs):
-        if not self.has_content and len(children):
-            raise ValueError('This tag does not support children')
+        self.children = self._init_children(children)
+        self.attrs = self._init_attrs(attrs)
 
-        self.children = list(children)
-        self.attrs = self._normalize_attrs(attrs)
+    def _init_children(self, children):
+        if not self.has_content:
+            if len(children):
+                raise ValueError('This tag does not support children')
+            return None  # Prevent adding children later
 
-    def _normalize_attrs(self, attrs):
+        return list(children)
+
+    def _init_attrs(self, attrs):
         new_attrs = {}
 
         for key, val in six.iteritems(attrs):
@@ -27,19 +34,20 @@ class Tag(object):
         return name.lower().strip('_-').replace('_', '-')
 
     def __str__(self):
-        attrs = ' '.join(
-            self._format_attribute(key, val)
-            for key, val in sorted(self.attrs.items()))
+        out = io.StringIO()
+        out.write('<{}'.format(self.name))
 
-        if attrs:
-            attrs = ' ' + attrs
+        for key, val in sorted(six.iteritems(self.attrs)):
+            out.write(' {}="{}"'.format(key, html_escape(val)))
+
+        out.write('>')
 
         if self.has_content:
-            content = ''.join(self._format_child(x) for x in self.children)
-            return '<{name}{attrs}>{content}</{name}>'.format(
-                name=self.name, attrs=attrs, content=content)
+            for child in self.children:
+                out.write(self._format_child(child))
+            out.write('</{}>'.format(self.name))
 
-        return '<{name}{attrs}>'.format(name=self.name, attrs=attrs)
+        return out.getvalue()
 
     def _format_attribute(self, name, value):
         return '{}="{}"'.format(name, html_escape(value))
@@ -47,30 +55,55 @@ class Tag(object):
     def _format_child(self, child):
         text_form = six.text_type(child)
 
-        if isinstance(child, (Tag, Safe)):
+        if isinstance(child, (Tag, Safe)) or self.raw_text:
             return text_form
 
         return html_escape(text_form)
 
 
-class TagFactory(object):
+# See: http://dev.w3.org/html5/html-author/#index-of-elements
+_EMPTY_TAGS = [
+    'area', 'base', 'br', 'col', 'command', 'embed', 'hr', 'img', 'input',
+    'link', 'meta', 'param', 'source']
+_KNOWN_TAGS = [
+    'a', 'abbr', 'address', 'area', 'article', 'aside', 'audio', 'b',
+    'base', 'bb', 'bdo', 'blockquote', 'body', 'br', 'button',
+    'canvas', 'caption', 'cite', 'code', 'col', 'colgroup', 'command',
+    'datagrid', 'datalist', 'dd', 'del', 'details', 'dfn', 'dialog',
+    'div', 'dl', 'dt', 'em', 'embed', 'fieldset', 'figure', 'footer',
+    'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'header',
+    'hr', 'html', 'i', 'iframe', 'img', 'input', 'ins', 'kbd',
+    'label', 'legend', 'li', 'link', 'map', 'mark', 'menu', 'meta',
+    'meter', 'nav', 'noscript', 'object', 'ol', 'optgroup', 'option',
+    'output', 'p', 'param', 'pre', 'progress', 'q', 'rp', 'rt',
+    'ruby', 'samp', 'script', 'section', 'select', 'small', 'source',
+    'span', 'strong', 'style', 'sub', 'sup', 'table', 'tbody', 'td',
+    'textarea', 'tfoot', 'th', 'thead', 'time', 'title', 'tr', 'ul',
+    'var', 'video']
+_RAW_TEXT_TAGS = ['script']  # others?
 
-    _UNCLOSED_TAGS = ['img', 'hr', 'br', 'link', 'meta']  # todo: others?
+
+class TagFactory(object):
 
     def __init__(self):
         self._cached_tags = {}
 
     def __getattr__(self, name):
         name = name.lower()
+
+        if name not in _KNOWN_TAGS:
+            raise AttributeError('{} is not a known HTML5 tag'.format(name))
+
         if name not in self._cached_tags:
             self._cached_tags[name] = self._create_tag(name)
+
         return self._cached_tags[name]
 
     def _create_tag(self, name):
-        has_content = name not in self._UNCLOSED_TAGS
         return type(name.title(), (Tag,), {
             'name': name,
-            'has_content': has_content,
+            'has_content': name not in _EMPTY_TAGS,
+            'raw_text': name in _RAW_TEXT_TAGS,
         })
 
 
