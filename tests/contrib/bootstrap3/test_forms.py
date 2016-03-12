@@ -1,6 +1,8 @@
 from dompy.contrib.bootstrap3.forms import form
+import pytest
 
 
+@pytest.mark.skipif(True, reason='OLD')
 class Test_form(object):
 
     def test_form_simple(self):

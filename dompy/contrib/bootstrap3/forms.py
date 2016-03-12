@@ -17,9 +17,8 @@ def form(*children, **attrs):
     return tags.Form(*children, **attrs)
 
 
-def form_group(*a, **kw):
-    kw['class_'] = 'form-group'
-    return tags.Div(*a, **kw)
+def form_group(*children):
+    return tags.Div({'class': 'form-group'}, *children)
 
 
 def form_input(type_='text', name=None, id=None, label=None, placeholder=None):

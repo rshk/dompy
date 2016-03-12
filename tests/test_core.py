@@ -1,6 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
 from dompy import tags
+from dompy.core import Tag
 
 
 class TestTagsBehaveAsNormalClasses(object):
@@ -24,3 +25,38 @@ class TestTagsBehaveAsNormalClasses(object):
         assert tags.Img.__name__ == 'Img'
         assert tags.Img.name == 'img'
         assert tags.Img.has_content is False
+
+    def test_tag_isinstance_tag(self):
+        div = tags.Div()
+        assert isinstance(div, Tag)
+
+
+class TestTagAttributes(object):
+
+    def test_attribute_can_be_set(self):
+        div = tags.Div()
+        div['class'] = 'myclass'
+        assert str(div) == '<div class="myclass"></div>'
+
+    def test_attribute_can_be_changed(self):
+        div = tags.Div({'class': 'original'})
+        div['class'] = 'myclass'
+        assert str(div) == '<div class="myclass"></div>'
+
+    def test_attribute_can_be_deleted(self):
+        div = tags.Div({'class': 'original'})
+        del div['class']
+        assert str(div) == '<div></div>'
+
+    def test_attribute_can_be_read(self):
+        div = tags.Div({'class': 'original'})
+        assert div['class'] == 'original'
+
+
+class TestChildrenAppend(object):
+
+    def test_create_tag_with_children(self):
+        div = tags.Div({'class': 'foobar'}).append(
+            'Hello, ', tags.Strong().append('World!'))
+        assert str(div) == \
+            '<div class="foobar">Hello, <strong>World!</strong></div>'

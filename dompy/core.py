@@ -9,35 +9,36 @@ class Tag(object):
     has_content = False
     raw_text = False
 
-    def __init__(self, *children, **attrs):
-        self.children = self._init_children(children)
-        self.attrs = self._init_attrs(attrs)
+    def __init__(self, attrs=None):
+        self._attrs = {}
+        if attrs is not None:
+            self._attrs.update(attrs)
+        self.children = []
 
-    def _init_children(self, children):
-        if not self.has_content:
-            if len(children):
-                raise ValueError('This tag does not support children')
-            return None  # Prevent adding children later
+    # ---------- Attribute manipulation
 
-        return list(children)
+    def __getitem__(self, name):
+        return self._attrs[name]
 
-    def _init_attrs(self, attrs):
-        new_attrs = {}
+    def __setitem__(self, name, value):
+        self._attrs[name] = value
 
-        for key, val in six.iteritems(attrs):
-            key = self._normalize_attribute_name(key)
-            new_attrs[key] = val
+    def __delitem__(self, name):
+        del self._attrs[name]
 
-        return new_attrs
+    # ---------- Children manipulation
 
-    def _normalize_attribute_name(self, name):
-        return name.lower().strip('_-').replace('_', '-')
+    def append(self, *children):
+        self.children.extend(children)
+        return self  # allow chaining
+
+    # ---------- Serialization
 
     def __str__(self):
         out = io.StringIO()
         out.write('<{}'.format(self.name))
 
-        for key, val in sorted(six.iteritems(self.attrs)):
+        for key, val in sorted(six.iteritems(self._attrs)):
             out.write(' {}="{}"'.format(key, html_escape(val)))
 
         out.write('>')
@@ -56,6 +57,7 @@ class Tag(object):
         text_form = six.text_type(child)
 
         if isinstance(child, (Tag, Safe)) or self.raw_text:
+            # TODO if raw_text, valdate that it doesn't contain </script>
             return text_form
 
         return html_escape(text_form)

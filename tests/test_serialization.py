@@ -9,17 +9,17 @@ def test_serialize_empty_div():
 
 
 def test_serialize_empty_div_with_attribute():
-    html = str(tags.Div(class_='foobar'))
+    html = str(tags.Div({'class': 'foobar'}))
     assert html == '<div class="foobar"></div>'
 
 
 def test_serialize_empty_div_with_two_attributes():
-    html = str(tags.Div(class_='foobar', role='foo'))
+    html = str(tags.Div({'class': 'foobar', 'role': 'foo'}))
     assert html == '<div class="foobar" role="foo"></div>'
 
 
 def test_serialize_empty_div_with_data_attribute():
-    html = str(tags.Div(data_foo='bar'))
+    html = str(tags.Div({'data-foo': 'bar'}))
     assert html == '<div data-foo="bar"></div>'
 
 
@@ -39,7 +39,7 @@ def test_serialize_empty_img():
 
 
 def test_serialize_img_with_attribute():
-    html = str(tags.Img(src='http://example.com/foo.png'))
+    html = str(tags.Img({'src': 'http://example.com/foo.png'}))
     assert html == '<img src="http://example.com/foo.png">'
 
 
@@ -47,10 +47,11 @@ def test_serialize_simple_html_page():
     dom = tags.Html(
         tags.Head(
             tags.Title('Page title'),
-            tags.Link(rel='stylesheet', type_='text/css', href='style.css'),
+            tags.Link({'rel': 'stylesheet', 'type': 'text/css',
+                       'href': 'style.css'}),
             ),
         tags.Body(
-            tags.Nav(id='main-nav', class_='navigation'),
+            tags.Nav({'id': 'main-nav', 'class': 'navigation'}),
             tags.H1('Page title!'),
             tags.P('Text paragraph'),
         ),
