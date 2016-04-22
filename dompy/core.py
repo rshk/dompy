@@ -11,43 +11,120 @@ class Tag(object):
 
     def __init__(self, attrs=None):
         self._attrs = {}
-        if attrs is not None:
-            self._attrs.update(attrs)
+        self._classes = set()
+        self._style = {}
         self.children = []
 
-    # ---------- Attribute manipulation
+        if attrs is not None:
+            for key, val in six.iteritems(attrs):
+                self[key] = val
+
+    # Attribute manipulation
+    # ========================================
 
     def __getitem__(self, name):
+        if name == 'class':
+            return self._serialize_classes(self._classes)
+
+        if name == 'style':
+            return self._serialize_style(self._style)
+
         return self._attrs[name]
 
     def __setitem__(self, name, value):
-        self._attrs[name] = value
+        if name == 'class':
+            self._classes = set(self._parse_classes(value))
+
+        elif name == 'style':
+            self._style = dict(self._parse_style(value))
+
+        else:
+            self._attrs[name] = value
 
     def __delitem__(self, name):
         del self._attrs[name]
 
-    # ---------- Children manipulation
+    # CSS Class handling
+    # ----------------------------------------
+
+    def add_class(self, name):
+        self._classes.add(name)
+
+    def remove_class(self, name):
+        self._classes.discard(name)
+
+    def has_class(self, name):
+        return name in self._classes
+
+    def _parse_classes(self, s):
+        return s.split()
+
+    def _serialize_classes(self, classes):
+        return ' '.join(sorted(classes))
+
+    # CSS style handling
+    # ----------------------------------------
+
+    def get_style(self, name):
+        return self._style[name]
+
+    def set_style(self, name, value):
+        self._style[name] = value
+
+    def _parse_style(self, s):
+        for item in s.split(';'):
+            key, value = item.split(':', 1)
+            key = key.strip()
+            value = value.strip()
+            yield key, value
+
+    def _serialize_style(self, style):
+        return ';'.join('{}: {}'.format(key, value)
+                        for key, value in sorted(six.iteritems(style)))
+
+    # Children manipulation
+    # ========================================
 
     def append(self, *children):
         self.children.extend(children)
         return self  # allow chaining
 
-    # ---------- Serialization
+    def append_to(self, other):
+        other.append(self)
+        return self
 
-    def __str__(self):
-        out = io.StringIO()
-        out.write('<{}'.format(self.name))
+    def prepend(self, *children):
+        for idx, child in enumerate(children):
+            self.children.insert(idx, child)
+        return self
 
+    def prepend_to(self, other):
+        other.prepend(self)
+        return self
+
+    def text(self, text):
+        """Replace all content with a single text node"""
+        self.children.clear()
+        self.children.append(text)
+
+    # Serialization
+    # ========================================
+
+    def serialize(self, stream):
+        stream.write('<{}'.format(self.name))
         for key, val in sorted(six.iteritems(self._attrs)):
-            out.write(' {}="{}"'.format(key, html_escape(val)))
-
-        out.write('>')
+            stream.write(self._format_attribute(key, val))
+        stream.write('>')
 
         if self.has_content:
             for child in self.children:
-                out.write(self._format_child(child))
-            out.write('</{}>'.format(self.name))
+                stream.write(self._format_child(child))
 
+            stream.write('</{}>'.format(self.name))
+
+    def __str__(self):
+        out = io.StringIO()
+        self.serialize(out)
         return out.getvalue()
 
     def _format_attribute(self, name, value):
