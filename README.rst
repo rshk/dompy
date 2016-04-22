@@ -17,3 +17,59 @@ Document Object Model, in Python.
 
 .. image:: https://img.shields.io/pypi/pyversions/dompy.svg
     :target: https://pypi.python.org/pypi/dompy
+
+
+Abstract
+========
+
+Most web "template engines" handle HTML generation as text; this has
+some drawbacks, especially about flexibility, readability and
+performance.
+
+Dompy aims to take a different approach to solving the problem of
+generating HTML programmatically, by exposing a DOM-like API that can
+be used to build the page structure, and then render to HTML.
+
+
+Example
+=======
+
+.. code-block:: python
+
+    from dompy import tags
+
+    mypage = tags.Html()
+
+    page_head = tags.Head()
+    page_head.append(tags.Title().text('Hello, World!'))
+    mypage.append(page_head)
+
+    page_body = tags.Body()
+    page_body.append(tags.H1().text('Hello, World!'))
+    mypage.append(page_body)
+
+    output = str(mypage)
+
+Of course, the idea there is to have different functions generate
+parts of the template, and then combine the results together:
+
+.. code-block:: python
+
+    from dompy import tags
+
+    def make_page():
+        head = make_head()
+        body = make_body()
+        return tags.Html().append(head, body)
+
+    def make_head():
+        return tags.Head().append(
+            tags.Title().text('Hello, World!'),
+            tags.Link({'rel': 'stylesheet', 'href': 'style.css'}))
+
+    def make_body():
+        return tags.Body().append(
+            tags.H1().text('Hello, World!'),
+            tags.P().text('This is a paragraph of text'))
+
+    output = str(make_page())
