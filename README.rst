@@ -58,18 +58,16 @@ parts of the template, and then combine the results together:
     from dompy import tags
 
     def make_page():
-        head = make_head()
-        body = make_body()
+        head = tags.Head().append(*make_head())
+        body = tags.Body().append(*make_body())
         return tags.Html().append(head, body)
 
     def make_head():
-        return tags.Head().append(
-            tags.Title().text('Hello, World!'),
-            tags.Link({'rel': 'stylesheet', 'href': 'style.css'}))
+        yield tags.Title().text('Hello, World!')
+        yield tags.Link({'rel': 'stylesheet', 'href': 'style.css'})
 
     def make_body():
-        return tags.Body().append(
-            tags.H1().text('Hello, World!'),
-            tags.P().text('This is a paragraph of text'))
+        yield tags.H1().text('Hello, World!')
+        yield tags.P().text('This is a paragraph of text')
 
     output = str(make_page())
