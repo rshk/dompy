@@ -105,7 +105,8 @@ class Tag(object):
     def text(self, text):
         """Replace all content with a single text node"""
         self.children.clear()
-        self.children.append(text)
+        self.append(text)
+        return self
 
     # Serialization
     # ========================================
@@ -128,7 +129,7 @@ class Tag(object):
         return out.getvalue()
 
     def _format_attribute(self, name, value):
-        return '{}="{}"'.format(name, html_escape(value))
+        return ' {}="{}"'.format(name, html_escape(value))
 
     def _format_child(self, child):
         text_form = six.text_type(child)

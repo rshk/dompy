@@ -71,3 +71,18 @@ parts of the template, and then combine the results together:
         yield tags.P().text('This is a paragraph of text')
 
     output = str(make_page())
+
+Now, output looks something like this (indentation added for clarity):
+
+.. code-block:: html
+
+    <html>
+        <head>
+            <title>Hello, World!</title>
+            <link href="style.css" rel="stylesheet">
+        </head>
+        <body>
+            <h1>Hello, World!</h1>
+            <p>This is a paragraph of text</p>
+        </body>
+    </html>
